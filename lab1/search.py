@@ -19,7 +19,6 @@ Pacman agents (in searchAgents.py).
 
 import util
 
-
 class SearchProblem:
     """
     This class outlines the structure of a search problem, but doesn't implement
@@ -71,7 +70,7 @@ def tinyMazeSearch(problem):
     from game import Directions
     s = Directions.SOUTH
     w = Directions.WEST
-    return [s, s, w, s, w, w, s, w]
+    return  [s, s, w, s, w, w, s, w]
 
 
 def depthFirstSearch(problem):
