@@ -19,6 +19,7 @@ Pacman agents (in searchAgents.py).
 
 import util
 
+
 class SearchProblem:
     """
     This class outlines the structure of a search problem, but doesn't implement
@@ -70,7 +71,8 @@ def tinyMazeSearch(problem):
     from game import Directions
     s = Directions.SOUTH
     w = Directions.WEST
-    return  [s, s, w, s, w, w, s, w]
+    return [s, s, w, s, w, w, s, w]
+
 
 def depthFirstSearch(problem):
     """
@@ -86,18 +88,21 @@ def depthFirstSearch(problem):
     print "Is the start a goal?", problem.isGoalState(problem.getStartState())
     print "Start's successors:", problem.getSuccessors(problem.getStartState())
     """
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    return search(problem, util.Stack())
+
 
 def breadthFirstSearch(problem):
     """Search the shallowest nodes in the search tree first."""
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    return search(problem, util.Queue())
+
 
 def uniformCostSearch(problem):
     """Search the node of least total cost first."""
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    def priority(state):  # define how to calculate priority of a state
+        return state[1]  # position 2 marks value, based on definition of elements in fringe from search function
+
+    return search(problem, util.PriorityQueueWithFunction(priority))
+
 
 def nullHeuristic(state, problem=None):
     """
@@ -106,10 +111,60 @@ def nullHeuristic(state, problem=None):
     """
     return 0
 
+
 def aStarSearch(problem, heuristic=nullHeuristic):
     """Search the node that has the lowest combined cost and heuristic first."""
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    def priority(state):  # define how to calculate priority of a state
+        return state[1] + state[2]  # position 2 marks g and position 3 marks h,
+        # based on definition of elements in fringe from search function
+
+    return search(problem, util.PriorityQueueWithFunction(priority), heuristic)
+
+
+def search(problem, fringe, heuristic=nullHeuristic):
+    """
+    :param heuristic: heuristic, needed only for A* search
+    :param problem: search space definition
+    :param fringe: structure defining priority by which nodes are picked from the fringe
+                  [(node, cost up to that point, action leading to that node, parent node)]
+    :return: list of actions leading to problem's goal node
+    """
+    expanded = {}  # {key: node, value: (cost up to that point, action leading to that node, parent node)}
+    fringe.push((problem.getStartState(), 0, 0, None, None))  # start search from first node
+
+    while not fringe.isEmpty():  # if this triggers it means we can't reach goal from starting node
+        node, value, _, leading, parent = fringe.pop()  # take first from fringe, priority defined by fringe type
+
+        if node in expanded:  # this additional check avoids problem of adding multiple same nodes to fringe
+            continue  # because we haven't expanded it yet
+
+        expanded[node] = (value, leading, parent)  # node is considered expanded after we fetch his successors,
+        # but we update it here so backtrack could work properly
+
+        if problem.isGoalState(node):  # if current node is our goal
+            return backtrack(node, expanded)  # then end search by backtracking through the graph
+
+        for successor, action, cost in problem.getSuccessors(node):  # for all successors of the node
+            if successor in expanded:  # if they have already been expanded
+                continue  # then continue to the next successor
+
+            g = value + cost  # cost to get from problem's start node to this successor
+            h = heuristic(successor, problem)  # approximated cost of getting from this successor to end node
+            fringe.push((successor, g, h, action, node))  # add successor to expansion fringe
+
+
+def backtrack(start, nodes):  # backtracks through expanded nodes to return list of actions leading from problem's start
+    actions = []  # action
+    node = start  # start from given node
+
+    while True:  # if we reached goal state from problem's start this should always finish
+        _, action, parent = nodes[node]  # for current node get action leading to that node and it's parent node
+
+        if parent is None:  # if parent is None it means we have reached problem's start state
+            return list(reversed(actions))  # since we started from goal state return reversed list of recorded actions
+
+        actions.append(action)  # add action leading to this state to list of actions
+        node = parent  # continue from parent state
 
 
 # Abbreviations
