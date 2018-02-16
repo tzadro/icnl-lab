@@ -293,13 +293,15 @@ class CornersProblem(search.SearchProblem):
         Returns the start state (in your state space, not the full Pacman state
         space)
         """
-        return self.startingPosition, tuple(self.startingPosition == corner for corner in self.corners)
+        # state represents pacman's position and vector indicating which of the four corners were visited
+        return self.startingPosition, tuple(self.startingPosition == corner for corner in self.corners)  # check if
+        # starting position is in any of the corners
 
     def isGoalState(self, state):
         """
         Returns whether this search state is a goal state of the problem.
         """
-        return all(state[1])
+        return all(state[1])  # is goal if all four corners have been visited
 
     def getSuccessors(self, state):
         """
@@ -311,8 +313,8 @@ class CornersProblem(search.SearchProblem):
             state, 'action' is the action required to get there, and 'stepCost'
             is the incremental cost of expanding to that successor
         """
-        node = state[0]
-        visited = state[1]
+        node = state[0]  # first element of state represents node
+        visited = state[1]  # second element of state represents vector indicating what corners are visited
 
         successors = []
         for action in [Directions.NORTH, Directions.SOUTH, Directions.EAST, Directions.WEST]:
@@ -324,10 +326,11 @@ class CornersProblem(search.SearchProblem):
             hitsWall = self.walls[nextx][nexty]
 
             if not hitsWall:
-                nextnode = (nextx, nexty)
-                nextvisited = tuple(v or nextnode == corner for v, corner in zip(visited, self.corners))
-                nextstate = (nextnode, nextvisited)
-                successors.append((nextstate, action, 1))
+                nextnode = (nextx, nexty)  # pacman's next position
+                nextvisited = tuple(v or nextnode == corner for v, corner in zip(visited, self.corners))  # corner is
+                # marked visited if it has previously been visited or if new position is in one of the corners
+                nextstate = (nextnode, nextvisited)  # create next state from position and visited
+                successors.append((nextstate, action, 1))  # append state to list of successors
 
         self._expanded += 1  # DO NOT CHANGE
         return successors
@@ -365,49 +368,22 @@ def cornersHeuristic(state, problem):
     admissible (as well as consistent).
     """
     corners = problem.corners  # These are the corner coordinates
-    walls = problem.walls.asList()  # These are the walls of the maze, as a Grid (game.py)
+    _ = problem.walls  # These are the walls of the maze, as a Grid (game.py)
 
-    node = state[0]
-    visited = state[1]
+    node = state[0]  # first element of state represents node
+    visited = state[1]  # second element of state represents vector indicating what corners are visited
 
-    """
-    res = 0
-    for visited, corner in zip(visited, corners):
-        if visited:
-            continue
+    remaining = [corner for visited, corner in zip(visited, corners) if not visited]  # get every unvisited corner
 
-        cornerx, cornery = corner
-
-        minx, miny = min(x, cornerx), min(y, cornery)
-        maxx, maxy = max(x, cornerx), max(y, cornery)
-
-        area = max(1, abs(maxx - minx) * abs(maxy - miny))
-        numwalls = sum([1 for x, y in walls if minx <= x < maxx and miny <= y < maxy])
-
-        h = 1. * util.manhattanDistance((minx, miny), (maxx, maxy)) * numwalls / area
-        h = util.manhattanDistance((minx, miny), (maxx, maxy))
-        h = 1
-
-        res += h
-
-    return res
-    """
-
-    unvisited = []
-    for visited, corner in zip(visited, corners):
-        if visited:
-            continue
-
-        unvisited.append(corner)
-
-    heuristic = 0
-    while unvisited:
-        distance, corner = min([(util.manhattanDistance(node, corner), corner) for corner in unvisited])
-        heuristic += distance
-        node = corner
-        unvisited.remove(corner)
-
-    return heuristic
+    h = 0
+    while remaining:
+        distances = [util.manhattanDistance(node, corner) for corner in remaining]  # get manhattan distance from
+        # current node to all remaining corners
+        distance = min(distances)  # take distance to closest corner
+        h += distance  # heuristic is sum of distances to closest corner
+        node = remaining[distances.index(distance)]  # continue approximation from that closest corner
+        remaining.remove(node)  # remove that corner from remaining corners and repeat until empty
+    return h
 
 class AStarCornersAgent(SearchAgent):
     "A SearchAgent for FoodSearchProblem using A* and your foodHeuristic"
