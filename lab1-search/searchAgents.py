@@ -476,8 +476,48 @@ def foodHeuristic(state, problem):
     problem.heuristicInfo['wallCount']
     """
     position, foodGrid = state
-    "*** YOUR CODE HERE ***"
-    return 0
+
+    if 'wallCount' not in problem.heuristicInfo:
+        problem.heuristicInfo['wallCount'] = Wallcounter(problem.walls.asList())
+
+    wallcntr = problem.heuristicInfo['wallCount']
+
+    return rec(position, foodGrid.asList(), wallcntr)
+
+def rec(node, foods, wallcntr):
+    if not foods:
+        return 0
+
+    k = 6
+    distances = [util.manhattanDistance(node, food) + k * wallcntr.minwalls(node, food) + rec(food, foods[:].remove(food), wallcntr) for food in foods]
+    return min(distances)
+
+class Wallcounter:
+    def __init__(self, walls):
+        self.cache = {}
+        self.walls = walls
+
+    def minwalls(self, start, end):
+        key = (start, end)
+
+        if key not in self.cache.keys():
+            self.cache[key] = self.calc(start, end)
+
+        return self.cache[key]
+
+    def calc(self, start, end):
+        if start == end:
+            return 0
+
+        diff = (end[0] - start[0], end[1] - start[1])
+        dx = diff[0] / abs(diff[0]) if diff[0] != 0 else 0
+        dy = diff[1] / abs(diff[1]) if diff[1] != 0 else 0
+
+        minwallsdx = self.minwalls((start[0] + dx, start[1]), end) if dx != 0 else 999999
+        minwallsdxdy = self.minwalls((start[0] + dx, start[1] + dy), end) if dx != 0 and dy != 0 else 999999
+        minwallsdy = self.minwalls((start[0], start[1] + dy), end) if dy != 0 else 999999
+
+        return min(minwallsdx, minwallsdxdy, minwallsdy) + (1 if start in self.walls else 0)
 
 class ClosestDotSearchAgent(SearchAgent):
     "Search for all food using a sequence of searches"
