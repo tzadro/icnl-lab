@@ -477,12 +477,17 @@ def foodHeuristic(state, problem):
     """
     position, foodGrid = state
 
-    if 'wallCount' not in problem.heuristicInfo:
-        problem.heuristicInfo['wallCount'] = Wallcounter(problem.walls.asList())
+    """ Option 1: returns number of food remaining """
+    return len(foodGrid.asList())
 
-    wallcntr = problem.heuristicInfo['wallCount']
-
-    return rec(position, foodGrid.asList(), wallcntr)
+    """ Option 2:returns manhattan distance (+ minimum number of walls on shortest possible path) between current
+    location and closest food, summed until reached last food """
+    # if 'wallCount' not in problem.heuristicInfo:
+    #     problem.heuristicInfo['wallCount'] = Wallcounter(problem.walls.asList())
+    #
+    # wallcntr = problem.heuristicInfo['wallCount']
+    #
+    # return rec(position, foodGrid.asList(), wallcntr)
 
 def rec(node, foods, wallcntr):
     if not foods:
@@ -543,12 +548,17 @@ class ClosestDotSearchAgent(SearchAgent):
         """
         # Here are some useful elements of the startState
         startPosition = gameState.getPacmanPosition()
-        food = gameState.getFood()
-        walls = gameState.getWalls()
-        problem = AnyFoodSearchProblem(gameState)
+        foods = gameState.getFood().asList()
+        _ = gameState.getWalls()
 
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        distances = [util.manhattanDistance(startPosition, food) for food in foods]  # get manhattan distance from
+        # current node to all remaining food
+        distance = min(distances)  # take distance to closest food
+        goal = foods[distances.index(distance)]  # continue approximation from that closest corner
+
+        problem = AnyFoodSearchProblem(gameState, goal)
+
+        return search.breadthFirstSearch(problem)
 
 class AnyFoodSearchProblem(PositionSearchProblem):
     """
@@ -565,7 +575,7 @@ class AnyFoodSearchProblem(PositionSearchProblem):
     method.
     """
 
-    def __init__(self, gameState):
+    def __init__(self, gameState, goal):
         "Stores information from the gameState.  You don't need to change this."
         # Store the food for later reference
         self.food = gameState.getFood()
@@ -576,15 +586,15 @@ class AnyFoodSearchProblem(PositionSearchProblem):
         self.costFn = lambda x: 1
         self._visited, self._visitedlist, self._expanded = {}, [], 0 # DO NOT CHANGE
 
+        self.goal = goal
+
     def isGoalState(self, state):
         """
         The state is Pacman's position. Fill this in with a goal test that will
         complete the problem definition.
         """
-        x,y = state
 
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return state == self.goal
 
 def mazeDistance(point1, point2, gameState):
     """
