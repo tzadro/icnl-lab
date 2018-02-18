@@ -480,21 +480,25 @@ def foodHeuristic(state, problem):
     """ Option 1: returns number of food remaining """
     return len(foodGrid.asList())
 
-    """ Option 2:returns manhattan distance (+ minimum number of walls on shortest possible path) between current
-    location and closest food, summed until reached last food """
-    # if 'wallCount' not in problem.heuristicInfo:
+    """ Option 2: returns manhattan distances (+ minimum number of walls on shortest possible path) from each point
+    to the next closest point, starting from player's current position """
+    # if 'wallCount' not in problem.heuristicInfo:  # one time initialize wallcounter object
     #     problem.heuristicInfo['wallCount'] = Wallcounter(problem.walls.asList())
     #
-    # wallcntr = problem.heuristicInfo['wallCount']
+    # wallcntr = problem.heuristicInfo['wallCount']  # fetch wallcounter global object
     #
-    # return rec(position, foodGrid.asList(), wallcntr)
+    # return rec(position, foodGrid.asList(), wallcntr)  # start recursion function from player's position
 
-def rec(node, foods, wallcntr):
-    if not foods:
+def rec(node, foods, wallcntr):  # returns minimal sum of manhattan distances from node to next food point,
+    # recursively repeating until reached all food nodes
+    if not foods:  # recursion end, if there is no more food to visit
         return 0
 
     k = 6
     distances = [util.manhattanDistance(node, food) + k * wallcntr.minwalls(node, food) + rec(food, foods[:].remove(food), wallcntr) for food in foods]
+    #  distance is manhattan distance from node to food point
+    # + minimum number of walls encountered on that shortest possible path
+    # + recursion repeated with start in that food point and rest of the food
     return min(distances)
 
 class Wallcounter:
@@ -510,18 +514,21 @@ class Wallcounter:
 
         return self.cache[key]
 
-    def calc(self, start, end):
-        if start == end:
+    def calc(self, start, end):  # calculates minimum number of walls we will encounter if we look at all shortest paths
+        if start == end:  # recursion end, if we reached end point
             return 0
 
         diff = (end[0] - start[0], end[1] - start[1])
+        # generates next step we should take to reach end from start
         dx = diff[0] / abs(diff[0]) if diff[0] != 0 else 0
         dy = diff[1] / abs(diff[1]) if diff[1] != 0 else 0
 
+        # recursively calculates for all possible steps we could take to still have minimum steps taken at the end,
         minwallsdx = self.minwalls((start[0] + dx, start[1]), end) if dx != 0 else 999999
         minwallsdxdy = self.minwalls((start[0] + dx, start[1] + dy), end) if dx != 0 and dy != 0 else 999999
         minwallsdy = self.minwalls((start[0], start[1] + dy), end) if dy != 0 else 999999
 
+        # returns minimum number of walls from next steps and adds 1 if start node is a wall
         return min(minwallsdx, minwallsdxdy, minwallsdy) + (1 if start in self.walls else 0)
 
 class ClosestDotSearchAgent(SearchAgent):
