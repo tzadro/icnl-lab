@@ -44,7 +44,14 @@ class ValueIterationAgent(ValueEstimationAgent):
         self.values = util.Counter() # A Counter is a dict with default 0
 
         # Write value iteration code here
-        "*** YOUR CODE HERE ***"
+        for _ in range(iterations):  # do value iteration for this many times
+            nextValues = util.Counter()  # init values_k+1 but still use self.values as values_k
+
+            for state in mdp.getStates():  # for every state
+                action = self.computeActionFromValues(state)  # calculate best action
+                nextValues[state] = self.computeQValueFromValues(state, action)  # set value_k+1 as val for that action
+
+            self.values = nextValues  # set values_k+1 as values_k for next iteration
 
 
     def getValue(self, state):
@@ -59,8 +66,12 @@ class ValueIterationAgent(ValueEstimationAgent):
           Compute the Q-value of action in state from the
           value function stored in self.values.
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        if action is None:  # if we reached terminal state
+            return 0  # value is 0
+
+        return sum([prob * (self.mdp.getReward(state, action, nextState) + self.discount * self.values[nextState]) for nextState, prob in self.mdp.getTransitionStatesAndProbs(state, action)])
+        # return sum of values for every possible outcome of doing action in state
+        # where value is probability of getting to next state * (reward of action in state leading to next state + discounted value of next state)
 
     def computeActionFromValues(self, state):
         """
@@ -71,8 +82,12 @@ class ValueIterationAgent(ValueEstimationAgent):
           there are no legal actions, which is the case at the
           terminal state, you should return None.
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        if self.mdp.isTerminal(state):  # if state is terminal
+            return None  # we don't need to take any action
+
+        return max([(self.computeQValueFromValues(state, action), action) for action in self.mdp.getPossibleActions(state)])[1]
+        # make list of pairs (value of action in state, action) for all possible actions in given state
+        # and return action of maximum pair compared by values
 
     def getPolicy(self, state):
         return self.computeActionFromValues(state)
