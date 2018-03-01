@@ -69,7 +69,7 @@ class ValueIterationAgent(ValueEstimationAgent):
         if action is None:  # if we reached terminal state
             return 0  # value is 0
 
-        return sum([prob * (self.mdp.getReward(state, action, nextState) + self.discount * self.values[nextState]) for nextState, prob in self.mdp.getTransitionStatesAndProbs(state, action)])
+        return sum([prob * (self.mdp.getReward(state, action, nextState) + self.discount * self.getValue(nextState)) for nextState, prob in self.mdp.getTransitionStatesAndProbs(state, action)])
         # return sum of values for every possible outcome of doing action in state
         # where value is probability of getting to next state * (reward of action in state leading to next state + discounted value of next state)
 
