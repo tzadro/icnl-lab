@@ -73,8 +73,17 @@ class ReflexAgent(Agent):
         newGhostStates = successorGameState.getGhostStates()
         newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
 
-        "*** YOUR CODE HERE ***"
-        return successorGameState.getScore()
+        if successorGameState.isWin():  # if next state is win return +inf
+            return 999999
+
+        # find manhattan distance to closest ghost
+        ghostDist = min([util.manhattanDistance(newPos, ghostPos) for ghostPos in successorGameState.getGhostPositions()])
+
+        # find manhattan distance to closest food
+        foodDist = min([util.manhattanDistance(newPos, foodPos) for foodPos in successorGameState.getFood().asList()])
+        numFood = len(successorGameState.getFood().asList())
+
+        return (successorGameState.getScore() * ghostDist) / (foodDist * numFood)  # prefer being further to ghost and closer to food
 
 def scoreEvaluationFunction(currentGameState):
     """
@@ -128,38 +137,37 @@ class MinimaxAgent(MultiAgentSearchAgent):
           gameState.getNumAgents():
             Returns the total number of agents in the game
         """
-        "*** YOUR CODE HERE ***"
         return self.minimax(gameState, self.depth)[1]
 
     def minimax(self, gameState, depth, agent=0):
-        if gameState.isWin() or gameState.isLose() or depth == 0:
-            return self.evaluationFunction(gameState)
+        if gameState.isWin() or gameState.isLose() or depth == 0:  # if terminal state or too deep
+            return self.evaluationFunction(gameState)  # return evaluation of current state
 
-        if agent == 0:
+        if agent == 0:  # if pacman then maximize
             values = []
 
-            for action in gameState.getLegalActions(agent):
-                nextState = gameState.generateSuccessor(agent, action)
+            for action in gameState.getLegalActions(agent):  # for every action pacman can take
+                nextState = gameState.generateSuccessor(agent, action)  # translate it to state it would lead to
 
-                value = self.minimax(nextState, depth, agent + 1)
+                value = self.minimax(nextState, depth, agent + 1)  # and calculate recursively minimax for next agent
 
-                values.append((value, action))
+                values.append((value, action))  # add value and action leading to that value so we can use it later
 
-            return max(values)
-        else:
+            return max(values)  # since it's player's turn find maximum value
+        else:  # else it's one of the ghost and minimize
             values = []
 
-            for action in gameState.getLegalActions(agent):
-                nextState = gameState.generateSuccessor(agent, action)
+            for action in gameState.getLegalActions(agent):  # for every action current ghost can take
+                nextState = gameState.generateSuccessor(agent, action)  # translate it to a state it would lead to
 
-                if agent == gameState.getNumAgents() - 1:
-                    value = self.minimax(nextState, depth - 1, 0)
+                if agent == gameState.getNumAgents() - 1:  # if we are on the last ghost
+                    value = self.minimax(nextState, depth - 1, 0)  # call again for pacman but deduct depth
                 else:
-                    value = self.minimax(nextState, depth, agent + 1)
+                    value = self.minimax(nextState, depth, agent + 1)  # else we find min for next ghost
 
                 values.append(value)
 
-            return min(values)
+            return min(values)  # since it's opponent's turn find minimum value
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
     """
@@ -170,11 +178,13 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         """
           Returns the minimax action using self.depth and self.evaluationFunction
         """
-        "*** YOUR CODE HERE ***"
-        alpha = -999999
-        beta = 999999
-        value = (-999999, None)
+        alpha = -999999  # -infinity
+        beta = 999999  # +infinity
+        value = (-999999, None)  # None is placeholder for action
 
+        # next part is maximizing player but adapted so we can know what action lead to best result
+        # only difference from the maximizing part in alphabeta is that value is tuple also containing action
+        # and we don't need to check for pruning since it is root state
         for action in gameState.getLegalActions(0):
             nextState = gameState.generateSuccessor(0, action)
 
@@ -185,38 +195,38 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         return value[1]
 
     def alphabeta(self, gameState, depth, alpha, beta, agent):
-        if gameState.isWin() or gameState.isLose() or depth == 0:
-            return self.evaluationFunction(gameState)
+        if gameState.isWin() or gameState.isLose() or depth == 0:  # if terminal state of too deep
+            return self.evaluationFunction(gameState)  # return evaluation of current state
 
-        if agent == 0:
-            value = -999999
+        if agent == 0:  # if pacman then maximize
+            value = -999999  # -infinity
 
-            for action in gameState.getLegalActions(0):
-                nextState = gameState.generateSuccessor(agent, action)
+            for action in gameState.getLegalActions(0):  # for every action pacman can take
+                nextState = gameState.generateSuccessor(agent, action)  # translate it to action it leads to
 
                 value = max(value, self.alphabeta(nextState, depth, alpha, beta, agent + 1))
 
-                if value > beta:
-                    return value
+                if value > beta:  # if current best value is bigger than what is worst value for minimizing player
+                    return value  # then further expanding won't make difference and beta prune
 
-                alpha = max(alpha, value)
+                alpha = max(alpha, value)  # update alpha
 
             return value
-        else:
+        else:  # else it's opponent's turn and minimize
             value = 999999
 
-            for action in gameState.getLegalActions(agent):
-                nextState = gameState.generateSuccessor(agent, action)
+            for action in gameState.getLegalActions(agent):  # for every action pacman can take
+                nextState = gameState.generateSuccessor(agent, action)  # translate it to action it leads to
 
-                if agent == gameState.getNumAgents() - 1:
-                    value = min(value, self.alphabeta(nextState, depth - 1, alpha, beta, 0))
+                if agent == gameState.getNumAgents() - 1:  # if last ghost
+                    value = min(value, self.alphabeta(nextState, depth - 1, alpha, beta, 0))  # then go deeper
                 else:
-                    value = min(value, self.alphabeta(nextState, depth, alpha, beta, agent + 1))
+                    value = min(value, self.alphabeta(nextState, depth, alpha, beta, agent + 1))  # else next ghost
 
-                if value < alpha:
-                    return value
+                if value < alpha:  # if current best value is smaller than what is worst value for maximizing player
+                    return value  # then further expanding won't make difference and alpha prune
 
-                beta = min(beta, value)
+                beta = min(beta, value)  # update beta
 
             return value
 
